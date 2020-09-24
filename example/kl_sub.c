@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "cdds/cdds_builtin.h"
 #include "dds/dds.h"
 

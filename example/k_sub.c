@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "cdds/cdds_builtin.h"
 #include "dds/dds.h"
 
@@ -13,7 +15,6 @@ int main(int argc, char *argv[]) {
         printf("USAGE:\n\tk_sub <topic-name>");
         exit(1);
     }
-
 
     p = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
     t = dds_create_topic (p, &KeyValue_desc, argv[1], NULL, NULL);
