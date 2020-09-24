@@ -98,20 +98,20 @@ static bool cdds_serdata_eqkey(const struct ddsi_serdata * a, const struct ddsi_
   (void)(a);
   (void)(b);
   /* ROS 2 doesn't do keys in a meaningful way yet */
-  printf("Called <cdds_serdata_eqkey>\n");
+  CY_DEBUG("Called <cdds_serdata_eqkey>\n");
   return true;
 }
 
 static uint32_t cdds_serdata_size(const struct ddsi_serdata * sd)
 {
-  printf("Called <cdds_serdata_size>\n");
+  CY_DEBUG("Called <cdds_serdata_size>\n");
   struct cdds_ddsi_payload * zp = (struct cdds_ddsi_payload *)sd;
   return zp->size;
 }
 
 static void cdds_serdata_free(struct ddsi_serdata * sd)
 {
-  printf("Called <cdds_serdata_free>\n");
+  CY_DEBUG("Called <cdds_serdata_free>\n");
   struct cdds_ddsi_payload * zp = (struct cdds_ddsi_payload *)sd;
   free(zp->payload);
   zp->size = 0;
@@ -121,7 +121,7 @@ static void cdds_serdata_free(struct ddsi_serdata * sd)
 
 static struct ddsi_serdata *cdds_serdata_from_ser_iov (const struct ddsi_sertopic *tpcmn, enum ddsi_serdata_kind kind, ddsrt_msg_iovlen_t niov, const ddsrt_iovec_t *iov, size_t size)
 {
-  printf("==> <cdds_serdata_from_ser_iov> for %s -- size %zu\n", tpcmn->name, size);
+  CY_DEBUG_WA("==> <cdds_serdata_from_ser_iov> for %s -- size %zu\n", tpcmn->name, size);
   struct cdds_ddsi_payload *zp = (struct cdds_ddsi_payload *)malloc(sizeof(struct cdds_ddsi_payload));
   ddsi_serdata_init(&zp->sd, tpcmn, kind);
   zp->size = size;
@@ -148,7 +148,7 @@ static struct ddsi_serdata *cdds_serdata_from_ser_iov (const struct ddsi_sertopi
 
 static struct ddsi_serdata *cdds_serdata_from_ser (const struct ddsi_sertopic *tpcmn, enum ddsi_serdata_kind kind, const struct nn_rdata *fragchain, size_t size)
 {
-  printf("Called <cdds_serdata_from_ser> for %s\n", tpcmn->name);
+  CY_DEBUG_WA("Called <cdds_serdata_from_ser> for %s\n", tpcmn->name);
   // This currently assumes that there is only one fragment.
   assert (fragchain->nextfrag == NULL);
   ddsrt_iovec_t iov = {
@@ -159,12 +159,12 @@ static struct ddsi_serdata *cdds_serdata_from_ser (const struct ddsi_sertopic *t
 }
 
 static struct ddsi_serdata *cdds_serdata_to_topicless (const struct ddsi_serdata *sd) {
-  printf("Called <cdds_serdata_to_topicless> \n");
+  CY_DEBUG("Called <cdds_serdata_to_topicless> \n");
   return ddsi_serdata_ref(sd);
 }
 
 static struct ddsi_serdata *cdds_to_ser_ref (const struct ddsi_serdata *serdata_common, size_t cdr_off, size_t cdr_sz, ddsrt_iovec_t *ref) {
-  printf("Called <cdds_to_ser_ref> \n");
+  CY_DEBUG("Called <cdds_to_ser_ref> \n");
   struct cdds_ddsi_payload *pl = (struct cdds_ddsi_payload *)serdata_common;
   // TODO: Address fragmentation
   assert (cdr_off == 0 && cdr_sz == pl->size);
@@ -175,15 +175,15 @@ static struct ddsi_serdata *cdds_to_ser_ref (const struct ddsi_serdata *serdata_
 }
 
 static void cdds_to_ser (const struct ddsi_serdata *serdata_common, size_t off, size_t sz, void *buf) {
-  printf("Called <cdds_to_ser_ref> \n");
+  CY_DEBUG("Called <cdds_to_ser_ref> \n");
   struct cdds_ddsi_payload *pl = (struct cdds_ddsi_payload *)serdata_common;
   memcpy(buf, pl->payload, pl->size);
 }
 
 static void cdds_to_ser_unref (struct ddsi_serdata *serdata_common, const ddsrt_iovec_t *ref) {
-  printf("Called <cdds_to_ser_unref> \n");
+  CY_DEBUG("Called <cdds_to_ser_unref> \n");
   (void)serdata_common;
-  // free(ref->iov_base);
+  free(ref->iov_base);
 }
 
 static const struct ddsi_serdata_ops cdds_serdata_ops = {

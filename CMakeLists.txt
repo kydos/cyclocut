@@ -14,6 +14,8 @@ endif()
 
 target_link_libraries(cdds-util ddsc)
 
+add_compile_definitions(DEBUG)
+
 option(BUILD_CDDS_UTIL_EXAMPLES "Build cdds-util examples" ON)
 if(BUILD_CDDS_UTIL_EXAMPLES)
     add_executable(bsub example/blob_subscriber.c)
