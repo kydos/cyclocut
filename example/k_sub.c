@@ -9,8 +9,14 @@ int main(int argc, char *argv[]) {
     KeyValue *sample[1] = {0};
     dds_sample_info_t si;
 
+    if (argc < 2) {
+        printf("USAGE:\n\tk_sub <topic-name>");
+        exit(1);
+    }
+
+
     p = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-    t = dds_create_topic (p, &KeyValue_desc, "KeyValue", NULL, NULL);
+    t = dds_create_topic (p, &KeyValue_desc, argv[1], NULL, NULL);
     r = dds_create_reader (p, t, NULL, NULL);
 
     printf ("=== [Reading] : \n");

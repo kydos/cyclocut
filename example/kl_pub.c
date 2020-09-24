@@ -10,17 +10,17 @@ int main(int argc, char *argv[]) {
     dds_entity_t w;
     NameValue sample;
 
-    if (argc < 3) {
-        printf("USAGE:\n\tkl_pub <name> <value>");
+    if (argc < 4) {
+        printf("USAGE:\n\tkl_pub <topic-name> <name> <value>");
         exit(1);
     }
 
     p = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-    t = dds_create_topic (p, &NameValue_desc, "NameValue", NULL, NULL);
+    t = dds_create_topic (p, &NameValue_desc, argv[1], NULL, NULL);
     w = dds_create_writer (p, t, NULL, NULL);
 
-    sample.name = argv[1];
-    sample.value = argv[2];
+    sample.name = argv[2];
+    sample.value = argv[3];
 
     printf ("=== [Writing]: \n");
     while (true) {
