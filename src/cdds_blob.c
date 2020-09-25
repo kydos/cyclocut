@@ -7,13 +7,18 @@ struct cdds_ddsi_payload* cdds_ddsi_payload_create(struct ddsi_sertopic *st, enu
   struct cdds_ddsi_payload* p = (struct cdds_ddsi_payload*)malloc(sizeof(struct cdds_ddsi_payload));
   ddsi_serdata_init(&p->sd, st, kind);
   p->kind = kind;
-  p->payload = buf;
+  p->payload = (unsigned char *)malloc(size);
+  memcpy(p->payload,buf, size);
   p->size = size;
   return p;
 }
 
 void cdds_ddsi_payload_free(struct cdds_ddsi_payload* p) {
+  CY_DEBUG("Called <cdds_ddsi_payload_free>\n");
+  assert(p != 0);
+  printf("Free ref->iov_base: 0x%p\n", p);
   free(p);
+  p = 0;
 }
 
 unsigned char* cdds_ddsi_payload_get(struct cdds_ddsi_payload* p) {
@@ -113,10 +118,15 @@ static void cdds_serdata_free(struct ddsi_serdata * sd)
 {
   CY_DEBUG("Called <cdds_serdata_free>\n");
   struct cdds_ddsi_payload * zp = (struct cdds_ddsi_payload *)sd;
+  assert(zp != 0);
+  assert(zp->payload != 0);
+  printf("Freeing zp->payload: 0x%p\n",zp->payload);
   free(zp->payload);
+  zp->payload = 0;
   zp->size = 0;
-  // TODO: verify that dds_fini does not need to be called on zp->sd
+  printf("Freeing zp->payload: 0x%p\n",zp);
   free(zp);
+  zp = 0;
 }
 
 static struct ddsi_serdata *cdds_serdata_from_ser_iov (const struct ddsi_sertopic *tpcmn, enum ddsi_serdata_kind kind, ddsrt_msg_iovlen_t niov, const ddsrt_iovec_t *iov, size_t size)
@@ -158,32 +168,45 @@ static struct ddsi_serdata *cdds_serdata_from_ser (const struct ddsi_sertopic *t
   return cdds_serdata_from_ser_iov (tpcmn, kind, 1, &iov, size);
 }
 
-static struct ddsi_serdata *cdds_serdata_to_topicless (const struct ddsi_serdata *sd) {
+static struct ddsi_serdata *cdds_serdata_to_topicless (const struct ddsi_serdata *psd) {
+
   CY_DEBUG("Called <cdds_serdata_to_topicless> \n");
-  return ddsi_serdata_ref(sd);
+  struct cdds_ddsi_payload *sd = (struct cdds_ddsi_payload *)psd;
+  struct cdds_ddsi_payload *sd_tl = (struct cdds_ddsi_payload *)malloc(sizeof(struct cdds_ddsi_payload));
+  ddsi_serdata_init(&sd_tl->sd, sd->sd.topic, SDK_KEY);
+  sd_tl->sd.topic = NULL;
+  sd_tl->sd.hash = sd->sd.hash;
+  sd_tl->sd.timestamp.v = INT64_MIN;
+  sd_tl->payload = NULL;
+  return &sd_tl->sd;
 }
+
 
 static struct ddsi_serdata *cdds_to_ser_ref (const struct ddsi_serdata *serdata_common, size_t cdr_off, size_t cdr_sz, ddsrt_iovec_t *ref) {
   CY_DEBUG("Called <cdds_to_ser_ref> \n");
+  CY_DEBUG_WA("Called <cdds_to_ser_ref> offset = %zu\n", cdr_off);
+  CY_DEBUG_WA("Called <cdds_to_ser_ref> size = %zu\n", cdr_sz);
+  CY_DEBUG_WA("Called <cdds_to_ser_ref> ref = %p\n", ref);
   struct cdds_ddsi_payload *pl = (struct cdds_ddsi_payload *)serdata_common;
-  // TODO: Address fragmentation
-  assert (cdr_off == 0 && cdr_sz == pl->size);
-
-  ref->iov_base = pl->payload;
-  ref->iov_len = pl->size;
+  ref->iov_base = pl->payload + cdr_off;
+  ref->iov_len = cdr_sz;
   return ddsi_serdata_ref(serdata_common);
-}
-
-static void cdds_to_ser (const struct ddsi_serdata *serdata_common, size_t off, size_t sz, void *buf) {
-  CY_DEBUG("Called <cdds_to_ser_ref> \n");
-  struct cdds_ddsi_payload *pl = (struct cdds_ddsi_payload *)serdata_common;
-  memcpy(buf, pl->payload, pl->size);
 }
 
 static void cdds_to_ser_unref (struct ddsi_serdata *serdata_common, const ddsrt_iovec_t *ref) {
   CY_DEBUG("Called <cdds_to_ser_unref> \n");
   (void)serdata_common;
-  free(ref->iov_base);
+  ddsi_serdata_unref(serdata_common);
+
+}
+
+static void cdds_to_ser (const struct ddsi_serdata *serdata_common, size_t off, size_t sz, void *buf) {
+  CY_DEBUG("Called <cdds_to_ser> \n");
+  CY_DEBUG_WA("Called <cdds_to_ser> offset = %zu\n", off);
+  CY_DEBUG_WA("Called <cdds_to_ser> size = %zu\n", sz);
+  CY_DEBUG_WA("Called <cdds_to_ser> buf = %p\n", buf);
+  struct cdds_ddsi_payload *pl = (struct cdds_ddsi_payload *)serdata_common;
+  memcpy (buf, pl->payload + off, sz);
 }
 
 static const struct ddsi_serdata_ops cdds_serdata_ops = {
@@ -198,18 +221,37 @@ static const struct ddsi_serdata_ops cdds_serdata_ops = {
 };
 
 struct ddsi_sertopic* cdds_create_blob_sertopic(dds_entity_t dp, char *topic_name, char* type_name, bool is_keyless) {
+  CY_DEBUG("Called <cdds_create_blob_sertopic> \n");
   struct ddsi_sertopic *st = (struct ddsi_sertopic*) malloc(sizeof(struct ddsi_sertopic));
   ddsi_sertopic_init (st, topic_name, type_name, &cdds_sertopic_ops, &cdds_serdata_ops, is_keyless);
   return st;
 }
 
 dds_entity_t cdds_create_blob_topic(dds_entity_t dp, char *topic_name, char* type_name, bool is_keyless) {
+  CY_DEBUG("Called <cdds_create_blob_topic> \n");
   struct ddsi_sertopic *st = (struct ddsi_sertopic*) malloc(sizeof(struct ddsi_sertopic));
   ddsi_sertopic_init (st, topic_name, type_name, &cdds_sertopic_ops, &cdds_serdata_ops, is_keyless);
   return dds_create_topic_generic (dp, &st, NULL, NULL, NULL);
 }
 
 int cdds_take_blob(dds_entity_t rd, struct cdds_ddsi_payload** sample, dds_sample_info_t * si) {
+  CY_DEBUG("Called <cdds_take_blob> \n");
   struct ddsi_serdata **sd = (struct ddsi_serdata **)sample;
   return dds_takecdr(rd, sd, 1, si, DDS_ANY_STATE);
+}
+
+void cdds_serdata_ref(struct ddsi_serdata *sd) {
+  ddsi_serdata_ref(sd);
+}
+
+void cdds_serdata_unref(struct ddsi_serdata *sd) {
+  ddsi_serdata_unref(sd);
+}
+
+void cdds_sertopic_ref(struct ddsi_sertopic *st) {
+  ddsi_sertopic_ref(st);
+}
+
+void cdds_sertopic_unref(struct ddsi_sertopic *st) {
+  ddsi_sertopic_unref(st);
 }

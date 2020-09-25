@@ -6,7 +6,7 @@
 #include "dds/ddsi/ddsi_serdata.h"
 #include "dds/ddsi/q_radmin.h"
 
-// #define CY_DEBUG_ON 1
+#define CY_DEBUG_ON 1
 #ifdef CY_DEBUG_ON
     #define CY_DEBUG(msg) printf(msg)
     #define CY_DEBUG_WA(fmt, args...) printf(fmt, args)
@@ -35,5 +35,9 @@ dds_entity_t cdds_create_blob_topic(dds_entity_t dp, char *topic_name, char* typ
 
 int cdds_take_blob(dds_entity_t rd, struct cdds_ddsi_payload** sample, dds_sample_info_t * si);
 
+void cdds_serdata_ref(struct ddsi_serdata *sd);
+void cdds_serdata_unref(struct ddsi_serdata *sd);
+void cdds_sertopic_ref(struct ddsi_sertopic *st);
+void cdds_sertopic_unref(struct ddsi_sertopic *st);
 
 #endif /* ATOLAB_CDDS_UTIL_H_ */
