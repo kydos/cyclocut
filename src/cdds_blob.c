@@ -4,10 +4,12 @@
 #include "cdds/cdds_util.h"
 
 struct cdds_ddsi_payload* cdds_ddsi_payload_create(struct ddsi_sertopic *st, enum ddsi_serdata_kind kind, unsigned char* buf, size_t size) {
+  CY_DEBUG_WA("cdds_ddsi_payload_create -- buf = %p size = %zu\n", buf, size);
   struct cdds_ddsi_payload* p = (struct cdds_ddsi_payload*)malloc(sizeof(struct cdds_ddsi_payload));
   ddsi_serdata_init(&p->sd, st, kind);
   p->kind = kind;
-  p->payload = (unsigned char *)malloc(size);
+  p->payload = buf;
+  CY_DEBUG_WA("cdds_ddsi_payload_create -- payload: %p\n", p->payload);
   memcpy(p->payload,buf, size);
   p->size = size;
   return p;
@@ -15,10 +17,8 @@ struct cdds_ddsi_payload* cdds_ddsi_payload_create(struct ddsi_sertopic *st, enu
 
 void cdds_ddsi_payload_free(struct cdds_ddsi_payload* p) {
   CY_DEBUG("Called <cdds_ddsi_payload_free>\n");
-  assert(p != 0);
   printf("Free ref->iov_base: 0x%p\n", p);
   free(p);
-  p = 0;
 }
 
 unsigned char* cdds_ddsi_payload_get(struct cdds_ddsi_payload* p) {
@@ -40,12 +40,21 @@ static bool cdds_sertopic_equal (const struct ddsi_sertopic *acmn, const struct 
   (void) acmn; (void) bcmn;
   return true;
 }
-
+static size_t get_hash(const char* source) {
+  size_t length = strlen(source);
+  size_t hash = 0;
+  for(size_t i = 0; i < length; i++) {
+    char c = source[i];
+    int a = c - '0';
+    hash = (hash * 10) + a;
+  }
+  return hash;
+}
 static uint32_t cdds_sertopic_hash (const struct ddsi_sertopic *tpcmn)
 {
   // nothing beyond the common fields
   (void) tpcmn;
-  return 0;
+  return get_hash(tpcmn->name);
 }
 
 
@@ -111,6 +120,8 @@ static uint32_t cdds_serdata_size(const struct ddsi_serdata * sd)
 {
   CY_DEBUG("Called <cdds_serdata_size>\n");
   struct cdds_ddsi_payload * zp = (struct cdds_ddsi_payload *)sd;
+  CY_DEBUG_WA("Called <cdds_serdata_size> zp: %p\n", zp);
+  assert(zp != 0);
   return zp->size;
 }
 
@@ -119,14 +130,13 @@ static void cdds_serdata_free(struct ddsi_serdata * sd)
   CY_DEBUG("Called <cdds_serdata_free>\n");
   struct cdds_ddsi_payload * zp = (struct cdds_ddsi_payload *)sd;
   assert(zp != 0);
-  assert(zp->payload != 0);
+  // assert(zp->payload != 0);
   printf("Freeing zp->payload: 0x%p\n",zp->payload);
   free(zp->payload);
   zp->payload = 0;
   zp->size = 0;
   printf("Freeing zp->payload: 0x%p\n",zp);
   free(zp);
-  zp = 0;
 }
 
 static struct ddsi_serdata *cdds_serdata_from_ser_iov (const struct ddsi_sertopic *tpcmn, enum ddsi_serdata_kind kind, ddsrt_msg_iovlen_t niov, const ddsrt_iovec_t *iov, size_t size)
@@ -183,21 +193,27 @@ static struct ddsi_serdata *cdds_serdata_to_topicless (const struct ddsi_serdata
 
 
 static struct ddsi_serdata *cdds_to_ser_ref (const struct ddsi_serdata *serdata_common, size_t cdr_off, size_t cdr_sz, ddsrt_iovec_t *ref) {
+  struct cdds_ddsi_payload *pl = (struct cdds_ddsi_payload *)serdata_common;
   CY_DEBUG("Called <cdds_to_ser_ref> \n");
   CY_DEBUG_WA("Called <cdds_to_ser_ref> offset = %zu\n", cdr_off);
   CY_DEBUG_WA("Called <cdds_to_ser_ref> size = %zu\n", cdr_sz);
   CY_DEBUG_WA("Called <cdds_to_ser_ref> ref = %p\n", ref);
-  struct cdds_ddsi_payload *pl = (struct cdds_ddsi_payload *)serdata_common;
-  ref->iov_base = pl->payload + cdr_off;
+  CY_DEBUG_WA("Called <cdds_to_ser_ref> ref->iobase = %p\n", ref->iov_base);
+  CY_DEBUG_WA("Called <cdds_to_ser_ref> ref->iov_len = %zu\n", ref->iov_len);
+  CY_DEBUG_WA("Called <cdds_to_ser_ref> pl->payload = %p\n", pl->payload);
+  CY_DEBUG_WA("Called <cdds_to_ser_ref> pl->size = %zu\n", pl->size);
+
+  ref->iov_base = pl->payload;
   ref->iov_len = cdr_sz;
   return ddsi_serdata_ref(serdata_common);
 }
 
 static void cdds_to_ser_unref (struct ddsi_serdata *serdata_common, const ddsrt_iovec_t *ref) {
   CY_DEBUG("Called <cdds_to_ser_unref> \n");
+  CY_DEBUG_WA("Called <cdds_to_ser_ref> ref->iobase = %p\n", ref->iov_base);
+  CY_DEBUG_WA("Called <cdds_to_ser_ref> ref->iov_len = %zu\n", ref->iov_len);
   (void)serdata_common;
   ddsi_serdata_unref(serdata_common);
-
 }
 
 static void cdds_to_ser (const struct ddsi_serdata *serdata_common, size_t off, size_t sz, void *buf) {
@@ -206,7 +222,7 @@ static void cdds_to_ser (const struct ddsi_serdata *serdata_common, size_t off, 
   CY_DEBUG_WA("Called <cdds_to_ser> size = %zu\n", sz);
   CY_DEBUG_WA("Called <cdds_to_ser> buf = %p\n", buf);
   struct cdds_ddsi_payload *pl = (struct cdds_ddsi_payload *)serdata_common;
-  memcpy (buf, pl->payload + off, sz);
+  memcpy (buf, pl->payload, pl->size);
 }
 
 static const struct ddsi_serdata_ops cdds_serdata_ops = {
@@ -217,7 +233,8 @@ static const struct ddsi_serdata_ops cdds_serdata_ops = {
   .to_topicless = cdds_serdata_to_topicless,
   .to_ser = cdds_to_ser,
   .to_ser_ref = cdds_to_ser_ref,
-  .to_ser_unref = cdds_to_ser_unref
+  .to_ser_unref = cdds_to_ser_unref,
+  .free = cdds_serdata_free
 };
 
 struct ddsi_sertopic* cdds_create_blob_sertopic(dds_entity_t dp, char *topic_name, char* type_name, bool is_keyless) {
