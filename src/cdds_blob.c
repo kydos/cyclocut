@@ -17,7 +17,6 @@ struct cdds_ddsi_payload* cdds_ddsi_payload_create(struct ddsi_sertopic *st, enu
 
 void cdds_ddsi_payload_free(struct cdds_ddsi_payload* p) {
   CY_DEBUG("Called <cdds_ddsi_payload_free>\n");
-  printf("Free ref->iov_base: 0x%p\n", p);
   free(p);
 }
 
