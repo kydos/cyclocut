@@ -130,11 +130,9 @@ static void cdds_serdata_free(struct ddsi_serdata * sd)
   struct cdds_ddsi_payload * zp = (struct cdds_ddsi_payload *)sd;
   assert(zp != 0);
   // assert(zp->payload != 0);
-  printf("Freeing zp->payload: 0x%p\n",zp->payload);
   free(zp->payload);
   zp->payload = 0;
   zp->size = 0;
-  printf("Freeing zp->payload: 0x%p\n",zp);
   free(zp);
 }
 
