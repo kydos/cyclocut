@@ -58,6 +58,7 @@ static uint32_t cdds_sertopic_hash (const struct ddsi_sertopic *tpcmn)
 
 static void cdds_sertopic_free(struct ddsi_sertopic * tpcmn) {
   ddsi_sertopic_fini(tpcmn);
+  free(tpcmn);
 }
 
 
