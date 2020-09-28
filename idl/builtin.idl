@@ -9,4 +9,4 @@ struct KeyValue {
     string value;
 };
 
-#pragma keylist KeyValue
+#pragma keylist KeyValue key
