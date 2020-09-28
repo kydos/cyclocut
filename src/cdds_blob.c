@@ -8,8 +8,7 @@ struct cdds_ddsi_payload* cdds_ddsi_payload_create(struct ddsi_sertopic *st, enu
   struct cdds_ddsi_payload* p = (struct cdds_ddsi_payload*)malloc(sizeof(struct cdds_ddsi_payload));
   ddsi_serdata_init(&p->sd, st, kind);
   p->kind = kind;
-  p->payload = buf;
-  CY_DEBUG_WA("cdds_ddsi_payload_create -- payload: %p\n", p->payload);
+  p->payload = (unsigned char *)malloc(size);
   memcpy(p->payload,buf, size);
   p->size = size;
   return p;
