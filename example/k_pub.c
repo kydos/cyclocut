@@ -3,7 +3,7 @@
 #include "cdds/cdds_builtin.h"
 #include "dds/dds.h"
 
-#define MAX_SAMPLES 128
+#define MAX_SAMPLES 16
 
 int main(int argc, char *argv[]) {
 
