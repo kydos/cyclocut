@@ -21,10 +21,11 @@ int main(int argc, char *argv[]) {
 
     sample.name = argv[2];
     sample.value = argv[3];
-
+    int i = 0;
     printf ("=== [Writing]: \n");
     while (true) {
-        printf ("(%s, %s)\n", sample.name, sample.value);
+        sample.sn = i;
+        printf ("[%d] -(%s, %s)\n", i, sample.name, sample.value);
         fflush (stdout);
         dds_write (w, &sample);
         dds_sleepfor (DDS_MSECS (500));

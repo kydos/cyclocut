@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
     while (true) {
         int n = dds_take(r, (void**)sample, &si, 1, 1);
         if (n > 0 && si.valid_data) {
-            printf ("(%s, %s)\n", sample[0]->name, sample[0]->value);
+            printf ("[%d] - (%s, %s)\n", sample[0]->sn, sample[0]->name, sample[0]->value);
             fflush (stdout);
         }
         dds_sleepfor (DDS_MSECS (500));

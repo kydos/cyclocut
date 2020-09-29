@@ -1,10 +1,12 @@
 struct NameValue {
+    long sn;
     string name;
     string value;
 };
 #pragma keylist NameValue
 
 struct KeyValue {
+    long sn;
     string key;
     string value;
 };

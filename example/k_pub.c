@@ -23,8 +23,10 @@ int main(int argc, char *argv[]) {
     sample.value = argv[3];
 
     printf ("=== [Writing]: \n");
+    int i = 0;
     while (true) {
-        printf ("(%s, %s)\n", sample.key, sample.value);
+        sample.sn = i;
+        printf ("[%d] - (%s, %s)\n", i, sample.key, sample.value);
         fflush (stdout);
         dds_write (w, &sample);
         dds_sleepfor (DDS_MSECS (500));

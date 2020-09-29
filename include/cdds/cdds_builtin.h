@@ -20,6 +20,7 @@ extern "C" {
 
 typedef struct NameValue
 {
+  int32_t sn;
   char * name;
   char * value;
 } NameValue;
@@ -35,6 +36,7 @@ dds_sample_free ((d), &NameValue_desc, (o))
 
 typedef struct KeyValue
 {
+  int32_t sn;
   char * key;
   char * value;
 } KeyValue;
