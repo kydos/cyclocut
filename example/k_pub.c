@@ -3,11 +3,14 @@
 #include "cdds/cdds_builtin.h"
 #include "dds/dds.h"
 
+#define MAX_SAMPLES 128
+
 int main(int argc, char *argv[]) {
 
     dds_entity_t p;
     dds_entity_t t;
     dds_entity_t w;
+    dds_qos_t *qos;
     KeyValue sample;
 
     if (argc < 4) {
@@ -17,7 +20,11 @@ int main(int argc, char *argv[]) {
 
     p = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
     t = dds_create_topic (p, &KeyValue_desc, argv[1], NULL, NULL);
-    w = dds_create_writer (p, t, NULL, NULL);
+    qos = dds_create_qos();
+    dds_qset_reliability(qos, DDS_RELIABILITY_RELIABLE, DDS_SECS (10));
+    dds_qset_history(qos, DDS_HISTORY_KEEP_ALL, 0);
+    dds_qset_resource_limits (qos, MAX_SAMPLES, DDS_LENGTH_UNLIMITED, DDS_LENGTH_UNLIMITED);
+    w = dds_create_writer (p, t, qos, NULL);
 
     sample.key = argv[2];
     sample.value = argv[3];
