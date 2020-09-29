@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
         fflush (stdout);
         dds_write (w, &sample);
         dds_sleepfor (DDS_MSECS (500));
-
+        i += 1;
     }
   return 0;
 }

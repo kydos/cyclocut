@@ -28,7 +28,6 @@ int main(int argc, char *argv[]) {
             fflush (stdout);
         }
         dds_sleepfor (DDS_MSECS (500));
-
     }
   return 0;
 }
