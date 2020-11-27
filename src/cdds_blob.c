@@ -167,7 +167,7 @@ static struct ddsi_serdata *cdds_serdata_from_ser (const struct ddsi_sertopic *t
 {
   CY_DEBUG_WA("Called <cdds_serdata_from_ser> for %s\n", tpcmn->name);
   // This currently assumes that there is only one fragment.
-  assert (fragchain->nextfrag == NULL);
+  // assert (fragchain->nextfrag == NULL);
   ddsrt_iovec_t iov = {
     .iov_base = NN_RMSG_PAYLOADOFF (fragchain->rmsg, NN_RDATA_PAYLOAD_OFF (fragchain)),
     .iov_len = fragchain->maxp1 // fragchain->min = 0 for first fragment, by definition
