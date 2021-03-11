@@ -7,8 +7,8 @@ enable_testing()
 # include_directories(./include /usr/local/include ${CYCLONE_INCLUDE})
 # link_directories(/usr/local/lib ${CYCLONE_LIB})
 
-include_directories(./include ${CYCLONE_INCLUDE})
-link_directories(${CYCLONE_LIB})
+include_directories(./include $ENV{CYCLONE_INCLUDE})
+link_directories($ENV{CYCLONE_LIB})
 
 if (BUILD_SHARED_LIBS OR NOT DEFINED BUILD_SHARED_LIBS)
     add_library(cdds-util SHARED src/cdds_blob.c src/builtin.c)
