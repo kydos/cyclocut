@@ -24,13 +24,18 @@ int main(int argc, char *argv[]) {
     dds_qos_t *qos = dds_create_qos();
     dds_entity_t r;
     dds_listener_t *l = dds_create_listener(0);
+    uint32_t did = DDS_DOMAIN_DEFAULT;
 
     if (argc < 2) {
-        printf("USAGE:\n\tk_sub <topic-name>");
+        printf("USAGE:\n\tk_sub <topic-name> [<domain-id>]\n");
         exit(1);
     }
+    if (argc > 2) {
+        sscanf(argv[2], "%u", &did);
+        printf("Creating participant on domain %u\n", did);
+    }
 
-    p = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
+    p = dds_create_participant (did, NULL, NULL);
     t = dds_create_topic (p, &NameValue_desc, argv[1], NULL, NULL);
     dds_qset_reliability(qos, DDS_RELIABILITY_RELIABLE, DDS_SECS (10));
     dds_qset_history(qos, DDS_HISTORY_KEEP_ALL, 0);

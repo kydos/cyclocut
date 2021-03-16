@@ -12,13 +12,20 @@ int main(int argc, char *argv[]) {
     dds_qos_t *qos;
     dds_entity_t w;
     NameValue sample;
+    uint32_t did = DDS_DOMAIN_DEFAULT;
 
+    p = dds_create_participant (did, NULL, NULL);
     if (argc < 4) {
-        printf("USAGE:\n\tkl_pub <topic-name> <name> <value>");
+        printf("USAGE:\n\tkl_pub <topic-name> <name> <value> [<domain-id>]");
         exit(1);
     }
 
-    p = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
+    if (argc > 4) {
+        sscanf(argv[4], "%u", &did);
+        printf("Creating participant on domain %u\n", did);
+    }
+
+    p = dds_create_participant (did, NULL, NULL);
     t = dds_create_topic (p, &NameValue_desc, argv[1], NULL, NULL);
     qos = dds_create_qos();
     dds_qset_reliability(qos, DDS_RELIABILITY_RELIABLE, DDS_SECS (10));
