@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include "cdds/cdds_builtin.h"
 #include "dds/dds.h"
@@ -31,7 +32,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
     if (argc > 2) {
-        sscanf(argv[2], "%u", &did);
+        did = strtoul(argv[2], &argv[2] + strlen(argv[2]), 10);
         printf("Creating participant on domain %u\n", did);
     }
 

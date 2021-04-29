@@ -6,7 +6,7 @@
 #include "dds/ddsi/ddsi_serdata.h"
 #include "dds/ddsi/q_radmin.h"
 
-// #define CY_DEBUG_ON 1
+#define CY_DEBUG_ON 1
 #ifdef CY_DEBUG_ON
     #define CY_DEBUG(msg) printf(msg)
     #define CY_DEBUG_WA(fmt, args...) printf(fmt, args)

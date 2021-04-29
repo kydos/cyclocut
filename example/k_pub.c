@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include "cdds/cdds_builtin.h"
 #include "dds/dds.h"
@@ -12,10 +13,15 @@ int main(int argc, char *argv[]) {
     dds_entity_t w;
     dds_qos_t *qos;
     KeyValue sample;
+    uint32_t did = DDS_DOMAIN_DEFAULT;
 
     if (argc < 4) {
-        printf("USAGE:\n\tkl_pub <topic-name> <name> <value>");
+        printf("USAGE:\n\tkl_pub <topic-name> <name> <value> [<did>]");
         exit(1);
+    }
+    if (argc > 4) {
+        did = strtoul(argv[2], &argv[2] + strlen(argv[2]), 10);
+        printf("Creating participant on domain %u\n", did);
     }
 
     p = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);

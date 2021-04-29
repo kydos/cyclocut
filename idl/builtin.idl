@@ -12,3 +12,11 @@ struct KeyValue {
 };
 
 #pragma keylist KeyValue key
+
+struct NamedBlob {
+    long sn;
+    string name;
+    sequence<octet> value;
+};
+
+#pragma keylist NamedBlob name
