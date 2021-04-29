@@ -26,7 +26,8 @@ void on_data_available(dds_entity_t r, void *arg) {
     int rv = 0;
     while(dds_take(r, (void**)sample, &si, 1, 1) > 0) {
         if (si.valid_data) {
-            rv = validate(&sample[0]->value);
+            printf ("Received Sample:  [%d] - %s - %d bytes\n", sample[0]->sn, sample[0]->name, sample[0]->value._length);
+//            rv = validate(&sample[0]->value);
             if ( rv == 0)
                 printf ("[%d] - %s - %d bytes -- Valid\n", sample[0]->sn, sample[0]->name, sample[0]->value._length);
             else
@@ -59,7 +60,7 @@ int main(int argc, char *argv[]) {
     }
     p = dds_create_participant (did, NULL, NULL);
     t = dds_create_topic (p, &NamedBlob_desc, argv[1], NULL, NULL);
-    dds_qset_reliability(qos, DDS_RELIABILITY_RELIABLE, DDS_SECS (10));
+    dds_qset_reliability(qos, DDS_RELIABILITY_RELIABLE, DDS_SECS (30));
     dds_qset_history(qos, DDS_HISTORY_KEEP_ALL, 0);
     dds_qset_resource_limits (qos, MAX_SAMPLES, DDS_LENGTH_UNLIMITED, DDS_LENGTH_UNLIMITED);
     dds_lset_data_available(l, on_data_available);

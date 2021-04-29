@@ -43,8 +43,8 @@ int main(int argc, char *argv[]) {
     p = dds_create_participant (did, NULL, NULL);
     t = dds_create_topic (p, &NamedBlob_desc, argv[1], NULL, NULL);
     qos = dds_create_qos();
-    dds_qset_reliability(qos, DDS_RELIABILITY_RELIABLE, DDS_SECS (10));
-    dds_qset_history(qos, DDS_HISTORY_KEEP_LAST, 1);
+    dds_qset_reliability(qos, DDS_RELIABILITY_RELIABLE, DDS_SECS (30));
+    dds_qset_history(qos, DDS_HISTORY_KEEP_ALL, 0);
     dds_qset_resource_limits (qos, MAX_SAMPLES, DDS_LENGTH_UNLIMITED, DDS_LENGTH_UNLIMITED);
     w = dds_create_writer (p, t, qos, NULL);
 
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
         printf ("[%d] -(%s, %s)\n", i, sample.name, "...");
         fflush (stdout);
         dds_write (w, &sample);
-        dds_sleepfor (DDS_MSECS (500));
+        dds_sleepfor (DDS_MSECS (1000));
         i += 1;
     }
     return 0;

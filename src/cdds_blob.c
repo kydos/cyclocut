@@ -143,7 +143,7 @@ static struct ddsi_serdata *cdds_serdata_from_ser_iov (const struct ddsi_sertopi
   ddsi_serdata_init(&zp->sd, tpcmn, kind);
   zp->size = size;
   zp->kind = kind;
-  zp->payload = 0;
+  zp->payload = malloc(size);
   switch (kind) {
     case SDK_KEY:
     case SDK_DATA:
@@ -163,16 +163,39 @@ static struct ddsi_serdata *cdds_serdata_from_ser_iov (const struct ddsi_sertopi
   return (struct ddsi_serdata *)zp;
 }
 
-static struct ddsi_serdata *cdds_serdata_from_ser (const struct ddsi_sertopic *tpcmn, enum ddsi_serdata_kind kind, const struct nn_rdata *fragchain, size_t size)
+static struct ddsi_serdata *cdds_serdata_from_ser (
+        const struct ddsi_sertopic *tpcmn,
+        enum ddsi_serdata_kind kind,
+        const struct nn_rdata *fragchain, size_t size)
 {
-  CY_DEBUG_WA("Called <cdds_serdata_from_ser> for %s\n", tpcmn->name);
-  // This currently assumes that there is only one fragment.
-  // assert (fragchain->nextfrag == NULL);
-  ddsrt_iovec_t iov = {
-    .iov_base = NN_RMSG_PAYLOADOFF (fragchain->rmsg, NN_RDATA_PAYLOAD_OFF (fragchain)),
-    .iov_len = fragchain->maxp1 // fragchain->min = 0 for first fragment, by definition
-  };
-  return cdds_serdata_from_ser_iov (tpcmn, kind, 1, &iov, size);
+    CY_DEBUG_WA("Called <cdds_serdata_from_ser> for %s for %zu bytes\n", tpcmn->name, size);
+    struct cdds_ddsi_payload *csd = (struct cdds_ddsi_payload *)malloc(sizeof(struct cdds_ddsi_payload));
+    ddsi_serdata_init(&csd->sd, tpcmn, kind);
+    csd->payload = (unsigned char *)malloc(size);
+    csd->size = size;
+
+    uint32_t off = 0;
+    assert(fragchain->min == 0);
+    assert(fragchain->maxp1 >= off);
+    unsigned char *cursor = csd->payload;
+
+    while (fragchain) {
+        CY_DEBUG_WA("Defragmenting with offset: %d\n", off);
+        if (fragchain->maxp1 > off) {
+            const unsigned char * payload =
+                    NN_RMSG_PAYLOADOFF(fragchain->rmsg, NN_RDATA_PAYLOAD_OFF(fragchain));
+            const unsigned char* src = payload + off - fragchain->min;
+            uint32_t n_bytes = fragchain->maxp1 - off;
+            CY_DEBUG_WA("Trying to memcpy %d bytes\n", n_bytes);
+            memcpy(cursor, src, n_bytes);
+            cursor = cursor + n_bytes;
+            off = fragchain->maxp1;
+            assert(off <= size);
+        }
+        fragchain = fragchain->nextfrag;
+    }
+    CY_DEBUG("Done Defragmenting!n");
+    return &csd->sd;
 }
 
 static struct ddsi_serdata *cdds_serdata_to_topicless (const struct ddsi_serdata *psd) {
@@ -201,6 +224,7 @@ static struct ddsi_serdata *cdds_to_ser_ref (const struct ddsi_serdata *serdata_
   CY_DEBUG_WA("Called <cdds_to_ser_ref> pl->size = %zu\n", pl->size);
 
   ref->iov_base = pl->payload + cdr_off;
+  u_int8_t *buf = (u_int8_t *)ref->iov_base;
   ref->iov_len = cdr_sz;
   return ddsi_serdata_ref(serdata_common);
 }
@@ -251,7 +275,8 @@ dds_entity_t cdds_create_blob_topic(dds_entity_t dp, char *topic_name, char* typ
 int cdds_take_blob(dds_entity_t rd, struct cdds_ddsi_payload** sample, dds_sample_info_t * si) {
   CY_DEBUG("Called <cdds_take_blob> \n");
   struct ddsi_serdata **sd = (struct ddsi_serdata **)sample;
-  return dds_takecdr(rd, sd, 1, si, DDS_ANY_STATE);
+  int rv = dds_takecdr(rd, sd, 1, si, DDS_ANY_STATE);
+  return rv;
 }
 
 void cdds_serdata_ref(struct ddsi_serdata *sd) {
