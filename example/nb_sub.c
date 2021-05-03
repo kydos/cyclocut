@@ -34,6 +34,7 @@ void on_data_available(dds_entity_t r, void *arg)
                 printf("[%d] - %s - %d bytes received but invalid byte found at index %d\n", sample[0]->sn, sample[0]->name, sample[0]->value._length, rv);
             fflush(stdout);
         }
+        dds_return_loan(r, (void **)sample, 1);
     }
 }
 
@@ -42,7 +43,7 @@ int main(int argc, char *argv[])
 
     dds_entity_t p;
     dds_entity_t t;
-    dds_qos_t *qos;
+    dds_qos_t *qos = dds_create_qos();
     dds_entity_t r;
     dds_listener_t *l = dds_create_listener(0);
     NamedBlob sample;

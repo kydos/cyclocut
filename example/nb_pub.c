@@ -10,7 +10,7 @@ int main(int argc, char *argv[]) {
 
     dds_entity_t p;
     dds_entity_t t;
-    dds_qos_t *qos;
+    dds_qos_t *qos = dds_create_qos();
     dds_entity_t w;
     NamedBlob sample;
     uint32_t value_len = 0;
@@ -42,7 +42,6 @@ int main(int argc, char *argv[]) {
 
     p = dds_create_participant (did, NULL, NULL);
     t = dds_create_topic (p, &NamedBlob_desc, argv[1], NULL, NULL);
-    qos = dds_create_qos();
     dds_qset_reliability(qos, DDS_RELIABILITY_RELIABLE, DDS_SECS (30));
     dds_qset_history(qos, DDS_HISTORY_KEEP_ALL, 0);
     dds_qset_resource_limits (qos, MAX_SAMPLES, DDS_LENGTH_UNLIMITED, DDS_LENGTH_UNLIMITED);
