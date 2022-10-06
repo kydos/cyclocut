@@ -3,19 +3,21 @@
 #include <string.h>
 #include "cdds/cdds_util.h"
 
-struct cdds_ddsi_payload* cdds_ddsi_payload_create(struct ddsi_sertopic *st, enum ddsi_serdata_kind kind, unsigned char* buf, size_t size) {
+
+struct cdds_ddsi_payload* cdds_ddsi_payload_create(struct ddsi_sertype *st, enum ddsi_serdata_kind kind, unsigned char* buf, size_t size) {
   CY_DEBUG_WA("cdds_ddsi_payload_create -- buf = %p size = %zu\n", buf, size);
-  struct cdds_ddsi_payload* p = (struct cdds_ddsi_payload*)malloc(sizeof(struct cdds_ddsi_payload));
+  struct cdds_ddsi_payload* p = (struct cdds_ddsi_payload*) malloc(sizeof(struct cdds_ddsi_payload));
   ddsi_serdata_init(&p->sd, st, kind);
   p->kind = kind;
-  p->payload = (unsigned char *)malloc(size);
-  memcpy(p->payload,buf, size);
+  p->payload = (unsigned char *) malloc(size);
+  memcpy(p->payload, buf, size);
   p->size = size;
   return p;
 }
 
 void cdds_ddsi_payload_free(struct cdds_ddsi_payload* p) {
   CY_DEBUG("Called <cdds_ddsi_payload_free>\n");
+  // #TODO THIJS: WHY IS p->payload not freed?
   free(p);
 }
 
@@ -31,13 +33,13 @@ enum ddsi_serdata_kind cdds_ddsi_payload_kind(struct cdds_ddsi_payload* p) {
   return p->kind;
 }
 
-
-static bool cdds_sertopic_equal (const struct ddsi_sertopic *acmn, const struct ddsi_sertopic *bcmn)
+static bool cdds_sertype_equal (const struct ddsi_sertype *acmn, const struct ddsi_sertype *bcmn)
 {
   // no fields in stp beyond the common ones, and those are all checked for equality before this function is called
   (void) acmn; (void) bcmn;
   return true;
 }
+
 static size_t get_hash(const char* source) {
   size_t length = strlen(source);
   size_t hash = 0;
@@ -48,21 +50,22 @@ static size_t get_hash(const char* source) {
   }
   return hash;
 }
-static uint32_t cdds_sertopic_hash (const struct ddsi_sertopic *tpcmn)
+
+static uint32_t cdds_sertype_hash (const struct ddsi_sertype *tpcmn)
 {
   // nothing beyond the common fields
   (void) tpcmn;
-  return get_hash(tpcmn->name);
+  return get_hash(tpcmn->type_name);
 }
 
 
-static void cdds_sertopic_free(struct ddsi_sertopic * tpcmn) {
-  ddsi_sertopic_fini(tpcmn);
+static void cdds_sertype_free(struct ddsi_sertype * tpcmn) {
+  ddsi_sertype_fini(tpcmn);
   free(tpcmn);
 }
 
 
-static void cdds_sertopic_zero_samples(const struct ddsi_sertopic * d, void * samples, size_t count) {
+static void cdds_sertype_zero_samples(const struct ddsi_sertype * d, void * samples, size_t count) {
   (void)d;
   (void)samples;
   (void)count;
@@ -70,8 +73,8 @@ static void cdds_sertopic_zero_samples(const struct ddsi_sertopic * d, void * sa
 }
 
 
-static void cdds_sertopic_realloc_samples(
-  void ** ptrs, const struct ddsi_sertopic * d,
+static void cdds_sertype_realloc_samples(
+  void ** ptrs, const struct ddsi_sertype * d,
   void * old, size_t oldcount, size_t count)
 {
   (void)(ptrs);
@@ -84,8 +87,8 @@ static void cdds_sertopic_realloc_samples(
   abort();
 }
 
-static void cdds_sertopic_free_samples(
-  const struct ddsi_sertopic * d, void ** ptrs, size_t count,
+static void cdds_sertype_free_samples(
+  const struct ddsi_sertype * d, void ** ptrs, size_t count,
   dds_free_op_t op)
 {
   (void)(d);    // unused
@@ -97,13 +100,17 @@ static void cdds_sertopic_free_samples(
   (void) op;
 }
 
-static const struct ddsi_sertopic_ops cdds_sertopic_ops = {
-  .free = cdds_sertopic_free,
-  .zero_samples = cdds_sertopic_zero_samples,
-  .realloc_samples = cdds_sertopic_realloc_samples,
-  .free_samples = cdds_sertopic_free_samples,
-  .equal = cdds_sertopic_equal,
-  .hash = cdds_sertopic_hash
+static const struct ddsi_sertype_ops cdds_sertype_ops = {
+  .version = ddsi_sertype_v0,
+  .arg = NULL,
+  .free = cdds_sertype_free,
+  .zero_samples = cdds_sertype_zero_samples,
+  .realloc_samples = cdds_sertype_realloc_samples,
+  .free_samples = cdds_sertype_free_samples,
+  .equal = cdds_sertype_equal,
+  .hash = cdds_sertype_hash
+
+  /* Here .type_id, .type_map, .type_info and .derive_sertype are needed if we want full XTypes across the bridge */
 };
 
 static bool cdds_serdata_eqkey(const struct ddsi_serdata * a, const struct ddsi_serdata * b)
@@ -136,7 +143,7 @@ static void cdds_serdata_free(struct ddsi_serdata * sd)
   free(zp);
 }
 
-static struct ddsi_serdata *cdds_serdata_from_ser_iov (const struct ddsi_sertopic *tpcmn, enum ddsi_serdata_kind kind, ddsrt_msg_iovlen_t niov, const ddsrt_iovec_t *iov, size_t size)
+static struct ddsi_serdata *cdds_serdata_from_ser_iov (const struct ddsi_sertype *tpcmn, enum ddsi_serdata_kind kind, ddsrt_msg_iovlen_t niov, const ddsrt_iovec_t *iov, size_t size)
 {
   CY_DEBUG_WA("==> <cdds_serdata_from_ser_iov> for %s -- size %zu\n", tpcmn->name, size);
   struct cdds_ddsi_payload *zp = (struct cdds_ddsi_payload *)malloc(sizeof(struct cdds_ddsi_payload));
@@ -164,7 +171,7 @@ static struct ddsi_serdata *cdds_serdata_from_ser_iov (const struct ddsi_sertopi
 }
 
 static struct ddsi_serdata *cdds_serdata_from_ser (
-        const struct ddsi_sertopic *tpcmn,
+        const struct ddsi_sertype *tpcmn,
         enum ddsi_serdata_kind kind,
         const struct nn_rdata *fragchain, size_t size)
 {
@@ -198,13 +205,14 @@ static struct ddsi_serdata *cdds_serdata_from_ser (
     return &csd->sd;
 }
 
-static struct ddsi_serdata *cdds_serdata_to_topicless (const struct ddsi_serdata *psd) {
+static struct ddsi_serdata *cdds_serdata_to_typeless (const struct ddsi_serdata *psd) {
 
-  CY_DEBUG("Called <cdds_serdata_to_topicless> \n");
+  CY_DEBUG("Called <cdds_serdata_to_typeless> \n");
   struct cdds_ddsi_payload *sd = (struct cdds_ddsi_payload *)psd;
   struct cdds_ddsi_payload *sd_tl = (struct cdds_ddsi_payload *)malloc(sizeof(struct cdds_ddsi_payload));
-  ddsi_serdata_init(&sd_tl->sd, sd->sd.topic, SDK_KEY);
-  sd_tl->sd.topic = NULL;
+
+  ddsi_serdata_init(&sd_tl->sd, sd->sd.type, SDK_KEY);
+  sd_tl->sd.type = NULL;
   sd_tl->sd.hash = sd->sd.hash;
   sd_tl->sd.timestamp.v = INT64_MIN;
   sd_tl->payload = NULL;
@@ -251,25 +259,25 @@ static const struct ddsi_serdata_ops cdds_serdata_ops = {
   .eqkey = cdds_serdata_eqkey,
   .from_ser = cdds_serdata_from_ser,
   .from_ser_iov = cdds_serdata_from_ser_iov,
-  .to_topicless = cdds_serdata_to_topicless,
+  .to_untyped = cdds_serdata_to_typeless,
   .to_ser = cdds_to_ser,
   .to_ser_ref = cdds_to_ser_ref,
   .to_ser_unref = cdds_to_ser_unref,
   .free = cdds_serdata_free
 };
 
-struct ddsi_sertopic* cdds_create_blob_sertopic(dds_entity_t dp, char *topic_name, char* type_name, bool is_keyless) {
-  CY_DEBUG("Called <cdds_create_blob_sertopic> \n");
-  struct ddsi_sertopic *st = (struct ddsi_sertopic*) malloc(sizeof(struct ddsi_sertopic));
-  ddsi_sertopic_init (st, topic_name, type_name, &cdds_sertopic_ops, &cdds_serdata_ops, is_keyless);
+struct ddsi_sertype* cdds_create_blob_sertype(dds_entity_t dp, char* type_name, bool is_keyless) {
+  CY_DEBUG("Called <cdds_create_blob_sertype> \n");
+  struct ddsi_sertype *st = (struct ddsi_sertype*) malloc(sizeof(struct ddsi_sertype));
+  ddsi_sertype_init (st, type_name, &cdds_sertype_ops, &cdds_serdata_ops, is_keyless);
   return st;
 }
 
 dds_entity_t cdds_create_blob_topic(dds_entity_t dp, char *topic_name, char* type_name, bool is_keyless) {
   CY_DEBUG("Called <cdds_create_blob_topic> \n");
-  struct ddsi_sertopic *st = (struct ddsi_sertopic*) malloc(sizeof(struct ddsi_sertopic));
-  ddsi_sertopic_init (st, topic_name, type_name, &cdds_sertopic_ops, &cdds_serdata_ops, is_keyless);
-  return dds_create_topic_generic (dp, &st, NULL, NULL, NULL);
+  struct ddsi_sertype *st = (struct ddsi_sertype*) malloc(sizeof(struct ddsi_sertype));
+  ddsi_sertype_init (st, type_name, &cdds_sertype_ops, &cdds_serdata_ops, is_keyless);
+  return dds_create_topic_sertype(dp, topic_name, &st, NULL, NULL, NULL);
 }
 
 int cdds_take_blob(dds_entity_t rd, struct cdds_ddsi_payload** sample, dds_sample_info_t * si) {
@@ -287,10 +295,10 @@ void cdds_serdata_unref(struct ddsi_serdata *sd) {
   ddsi_serdata_unref(sd);
 }
 
-void cdds_sertopic_ref(struct ddsi_sertopic *st) {
-  ddsi_sertopic_ref(st);
+void cdds_sertype_ref(struct ddsi_sertype *st) {
+  ddsi_sertype_ref(st);
 }
 
-void cdds_sertopic_unref(struct ddsi_sertopic *st) {
-  ddsi_sertopic_unref(st);
+void cdds_sertype_unref(struct ddsi_sertype *st) {
+  ddsi_sertype_unref(st);
 }

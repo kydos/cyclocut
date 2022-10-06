@@ -34,37 +34,37 @@ struct sampletype {
 };
 
 struct stp {
-  struct ddsi_sertopic c;
+  struct ddsi_sertype c;
 };
 
-static bool stp_equal (const struct ddsi_sertopic *acmn, const struct ddsi_sertopic *bcmn)
+static bool stp_equal (const struct ddsi_sertype *acmn, const struct ddsi_sertype *bcmn)
 {
   // no fields in stp beyond the common ones, and those are all checked for equality before this function is called
   (void) acmn; (void) bcmn;
   return true;
 }
 
-static uint32_t stp_hash (const struct ddsi_sertopic *tpcmn)
+static uint32_t stp_hash (const struct ddsi_sertype *tpcmn)
 {
   // nothing beyond the common fields
   (void) tpcmn;
   return 0;
 }
 
-static void stp_free (struct ddsi_sertopic *tpcmn)
+static void stp_free (struct ddsi_sertype *tpcmn)
 {
   struct stp * const stp = (struct stp *) tpcmn;
-  ddsi_sertopic_fini (&stp->c);
+  ddsi_sertype_fini (&stp->c);
   free (stp);
 }
 
-static void stp_zero_samples (const struct ddsi_sertopic *dcmn, void *samples, size_t count)
+static void stp_zero_samples (const struct ddsi_sertype *dcmn, void *samples, size_t count)
 {
   (void) dcmn;
   memset (samples, 0, count * sizeof (struct sampletype));
 }
 
-static void stp_realloc_samples (void **ptrs, const struct ddsi_sertopic *dcmn, void *old, size_t oldcount, size_t count)
+static void stp_realloc_samples (void **ptrs, const struct ddsi_sertype *dcmn, void *old, size_t oldcount, size_t count)
 {
   (void) dcmn;
   const size_t size = sizeof (struct sampletype);
@@ -78,7 +78,7 @@ static void stp_realloc_samples (void **ptrs, const struct ddsi_sertopic *dcmn, 
   }
 }
 
-static void stp_free_samples (const struct ddsi_sertopic *dcmn, void **ptrs, size_t count, dds_free_op_t op)
+static void stp_free_samples (const struct ddsi_sertype *dcmn, void **ptrs, size_t count, dds_free_op_t op)
 {
   (void) dcmn;
   if (count == 0)
@@ -99,7 +99,7 @@ static void stp_free_samples (const struct ddsi_sertopic *dcmn, void **ptrs, siz
   }
 }
 
-static const struct ddsi_sertopic_ops stp_ops = {
+static const struct ddsi_sertype_ops stp_ops = {
   .free = stp_free,
   .zero_samples = stp_zero_samples,
   .realloc_samples = stp_realloc_samples,
@@ -151,7 +151,7 @@ static char *strdup_with_len (const char *x, size_t l)
   return y;
 }
 
-static struct ddsi_serdata *sd_from_ser_iov (const struct ddsi_sertopic *tpcmn, enum ddsi_serdata_kind kind, ddsrt_msg_iovlen_t niov, const ddsrt_iovec_t *iov, size_t size)
+static struct ddsi_serdata *sd_from_ser_iov (const struct ddsi_sertype *tpcmn, enum ddsi_serdata_kind kind, ddsrt_msg_iovlen_t niov, const ddsrt_iovec_t *iov, size_t size)
 {
   struct stp const * const stp = (const struct stp *) tpcmn;
   struct sd *sd = malloc (sizeof (*sd));
@@ -187,7 +187,7 @@ static struct ddsi_serdata *sd_from_ser_iov (const struct ddsi_sertopic *tpcmn, 
   return &sd->c;
 }
 
-static struct ddsi_serdata *sd_from_ser (const struct ddsi_sertopic *tpcmn, enum ddsi_serdata_kind kind, const struct nn_rdata *fragchain, size_t size)
+static struct ddsi_serdata *sd_from_ser (const struct ddsi_sertype *tpcmn, enum ddsi_serdata_kind kind, const struct nn_rdata *fragchain, size_t size)
 {
   assert (fragchain->nextfrag == NULL);
   ddsrt_iovec_t iov = {
@@ -197,7 +197,7 @@ static struct ddsi_serdata *sd_from_ser (const struct ddsi_sertopic *tpcmn, enum
   return sd_from_ser_iov (tpcmn, kind, 1, &iov, size);
 }
 
-static struct ddsi_serdata *sd_from_keyhash (const struct ddsi_sertopic *tpcmn, const ddsi_keyhash_t *keyhash)
+static struct ddsi_serdata *sd_from_keyhash (const struct ddsi_sertype *tpcmn, const ddsi_keyhash_t *keyhash)
 {
   // unbounded string, therefore keyhash is MD5 and we can't extract the value
   // (don't try disposing/unregistering in RTI and expect this to accept the data)
@@ -205,7 +205,7 @@ static struct ddsi_serdata *sd_from_keyhash (const struct ddsi_sertopic *tpcmn, 
   return NULL;
 }
 
-static struct ddsi_serdata *sd_from_sample (const struct ddsi_sertopic *tpcmn, enum ddsi_serdata_kind kind, const void *sample)
+static struct ddsi_serdata *sd_from_sample (const struct ddsi_sertype *tpcmn, enum ddsi_serdata_kind kind, const void *sample)
 {
   const struct stp *tp = (const struct stp *) tpcmn;
   struct sd *sd = malloc (sizeof (*sd));
@@ -314,7 +314,7 @@ static bool sd_to_sample (const struct ddsi_serdata *serdata_common, void *sampl
   return true;
 }
 
-static bool sd_topicless_to_sample (const struct ddsi_sertopic *topic, const struct ddsi_serdata *serdata_common, void *sample, void **bufptr, void *buflim)
+static bool sd_topicless_to_sample (const struct ddsi_sertype *topic, const struct ddsi_serdata *serdata_common, void *sample, void **bufptr, void *buflim)
 {
   (void) topic;
   const struct sd *sd = (const struct sd *) serdata_common;
@@ -325,9 +325,9 @@ static bool sd_topicless_to_sample (const struct ddsi_sertopic *topic, const str
   return true;
 }
 
-static size_t sd_print (const struct ddsi_sertopic *sertopic_common, const struct ddsi_serdata *serdata_common, char *buf, size_t size)
+static size_t sd_print (const struct ddsi_sertype *sertype_common, const struct ddsi_serdata *serdata_common, char *buf, size_t size)
 {
-  (void) sertopic_common;
+  (void) sertype_common;
   const struct sd *sd = (const struct sd *) serdata_common;
   int cnt;
   if (sd->c.kind == SDK_DATA)
@@ -367,10 +367,10 @@ static const struct ddsi_serdata_ops sd_ops = {
   .get_keyhash = sd_get_keyhash
 };
 
-static struct ddsi_sertopic *make_sertopic (const char *topicname, const char *typename)
+static struct ddsi_sertype *make_sertype (const char *typename)
 {
   struct stp *stp = malloc (sizeof (*stp));
-  ddsi_sertopic_init (&stp->c, topicname, typename, &stp_ops, &sd_ops, false);
+  ddsi_sertype_init (&stp->c, typename, &stp_ops, &sd_ops, false);
   return &stp->c;
 }
 
@@ -401,8 +401,8 @@ int main(int argc, char *argv[])
   const dds_entity_t pp = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
   printf("Topic: %s\n", argv[1]);
 
-  struct ddsi_sertopic *st = make_sertopic (argv[1], argv[2]);
-  const dds_entity_t tp = dds_create_topic_generic (pp, &st, NULL, NULL, NULL);
+  struct ddsi_sertype *st = make_sertype (argv[2]);
+  const dds_entity_t tp = dds_create_topic_sertype (pp, argv[1], &st, NULL, NULL, NULL);
 
   dds_qos_t *qos = NULL;
   if (partition != NULL) {

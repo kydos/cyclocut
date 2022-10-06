@@ -16,7 +16,7 @@ else()
     add_library(cdds-util src/cdds_blob.c src/builtin.c)
 endif()
 
-target_link_libraries(cdds-util ddsc)
+target_link_libraries(cdds-util PUBLIC ddsc)
 
 add_compile_definitions(DEBUG)
 
