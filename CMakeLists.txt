@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.0)
-project(cdds-util VERSION 0.1.0)
+project(cdds-util VERSION 0.1.5)
 
 include(CTest)
 enable_testing()
