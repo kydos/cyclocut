@@ -21,7 +21,7 @@ jobs:
       run: |
         mkdir -p ${{runner.workspace}}/work
         cd ${{runner.workspace}}/work
-        git clone --depth 1 -b 0.7.0 https://github.com/eclipse-cyclonedds/cyclonedds.git
+        git clone --depth 1 -b 0.10.2 https://github.com/eclipse-cyclonedds/cyclonedds.git
         cd cyclonedds
         mkdir -p build
         cd build
