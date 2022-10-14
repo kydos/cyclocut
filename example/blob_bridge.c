@@ -19,14 +19,13 @@ int main(int argc, char *argv[])
   dds_return_t rc;
 
   const dds_entity_t dp = dds_create_participant (DDS_DOMAIN_DEFAULT, NULL, NULL);
-  struct ddsi_sertopic *in_st = cdds_create_blob_sertopic(dp, argv[1], argv[3], keyless == 1);
-  struct ddsi_sertopic *out_st = cdds_create_blob_sertopic(dp, argv[2], argv[3], keyless == 1);
-  const dds_entity_t in_tp = dds_create_topic_generic(dp, &in_st, 0, 0, 0);
-  const dds_entity_t out_tp = dds_create_topic_generic(dp, &out_st, 0, 0, 0);
+  struct ddsi_sertype *in_st = cdds_create_blob_sertype(dp, argv[3], keyless == 1);
+  struct ddsi_sertype *out_st = cdds_create_blob_sertype(dp, argv[3], keyless == 1);
+  const dds_entity_t in_tp = dds_create_topic_sertype(dp, argv[1], (struct ddsi_sertype **) &in_st, NULL, NULL, NULL);
+  const dds_entity_t out_tp = dds_create_topic_sertype(dp, argv[2], (struct ddsi_sertype **) &out_st, NULL, NULL, NULL);
 
   dds_qos_t *qos = NULL;
   if (partition != NULL) {
-
     qos = dds_create_qos();
     dds_qset_partition1(qos, partition);
   }
