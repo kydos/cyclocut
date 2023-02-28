@@ -153,7 +153,7 @@ static struct ddsi_serdata *cdds_serdata_from_ser_iov (const struct ddsi_sertype
   zp->payload = malloc(size);
   int offset = 0;
   int csize = 0;
-  in i = 0;
+  int i = 0;
   switch (kind) {
     case SDK_KEY:
     case SDK_DATA:
