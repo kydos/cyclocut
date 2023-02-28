@@ -151,12 +151,13 @@ static struct ddsi_serdata *cdds_serdata_from_ser_iov (const struct ddsi_sertype
   zp->size = size;
   zp->kind = kind;
   zp->payload = malloc(size);
+  int offset = 0;
+  int csize = 0;
+  in i = 0;
   switch (kind) {
     case SDK_KEY:
     case SDK_DATA:
-      int offset = 0;
-      int csize = 0;
-      for (int i = 0; i < niov; ++i) {
+      for (i = 0; i < niov; ++i) {
         csize += iov[i].iov_len;
         assert(csize <= size);
         memcpy(zp->payload + offset, iov[i].iov_base, iov[i].iov_len);
